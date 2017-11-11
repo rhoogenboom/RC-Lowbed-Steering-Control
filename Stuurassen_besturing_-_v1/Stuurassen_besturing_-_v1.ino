@@ -6,95 +6,112 @@
 */
 
 #include <Servo.h>
+#include <IRremote.h>
 
-Servo servoVoor; // voorste servo (3 stuurassen)
-Servo servoAchter; // achterste servo (2 stuurassen)
+int IR_RECV_PIN = 11;
+int SERVO_VOOR_PIN = 9;
+int SERVO_ACHTER_PIN = 10;
+int POT_PIN = 0; //potmeter pin
 
-int doodpuntBreedte = 30;
 
-int potpin = 0; //potmeter pin
-int uitslagPotmeter;    //huidige uitslag van potmeter vertaald van uitslag op plaat naar volledige bereik 
+IRrecv irrecv(IR_RECV_PIN);
+decode_results results;
+
+Servo servoFront; // voorste servo (3 stuurassen)
+Servo servoRear; // achterste servo (2 stuurassen)
+
+int deadCentreWidth = 30;
+
+int positionPotmeter;    //huidige uitslag van potmeter vertaald van uitslag op plaat naar volledige bereik 
 int analogPotmeter;  //uitlezing van potmeter op pin
+int oldPosition;
 
-int debugUitslag;
+int printDebugInfo;
 int printNow;
 
+int potMiddlePosition = 1023 / 2; //waarde als potmeter in het midden staat
 
-int PotuitslagMidden = 1023 / 2; //waarde als potmeter in het midden staat
+int potMaxPositionLeft = 313;//0; //minimale stand van potmeter links
+int potMaxPositionRight = 713;//potMiddlePosition + (potMiddlePosition - potMaxPositionLeft); //maximale stand van potmeter rechts
 
-int PotuitslagLinks = 313;//0; //minimale stand van potmeter links
-int PotuitslagRechts = 713;//PotuitslagMidden + (PotuitslagMidden - PotuitslagLinks); //maximale stand van potmeter rechts
+int maxPositionLeftFrontServo = 40; //maximale uitslag naar links voorste servo
+int maxPositionRightFrontServo = 140; //maximale uitslag naar rechts voorste servo
 
-int uitslagLinksServoVoor = 40; //maximale uitslag naar links voorste servo
-int uitslagRechtsServerVoor = 140; //maximale uitslag naar rechts voorste servo
-
-int uitslagLinksServoAchter = 60; //maximale uitslag naar links achterste servo
-int uitslagRechtsServerAchter = 120; //maximale uitslag naar rechts achterste servo
+int maxPositionLeftRearServo = 60; //maximale uitslag naar links achterste servo
+int maxPositionRightRearServo = 120; //maximale uitslag naar rechts achterste servo
 
 void setup() {
-  //debug
   Serial.begin(9600);
-  debugUitslag = 0;
+  printDebugInfo = 0;
+  oldPosition = -1;
 
-  servoVoor.attach(9);  // servo voor
-  servoAchter.attach(10); // servo achter
+  servoFront.attach(SERVO_VOOR_PIN);  // servo voor
+  servoRear.attach(SERVO_ACHTER_PIN); // servo achter
 }
 
-void debugSettings(int analogPotmeter, int uitslagPotmeter) {
+void debugSettings(int analogPotmeter, int positionPotmeter) {
 
   printNow++;
-  if ((debugUitslag != analogPotmeter) && (printNow % 15 == 0)) {
+  if ((printDebugInfo != analogPotmeter) && (printNow % 15 == 0)) {
     Serial.println("============================");
     Serial.println("");
     Serial.print("Potmeter analog: ");
     Serial.println(analogPotmeter);
     Serial.print("Potmeter translated: ");
-    Serial.println(uitslagPotmeter);
+    Serial.println(positionPotmeter);
 
     Serial.println("Potmeter analog: ");
     Serial.print("Servo voor:  ");
-    Serial.println(map(analogPotmeter, PotuitslagLinks, PotuitslagRechts, uitslagLinksServoVoor, uitslagRechtsServerVoor));
+    Serial.println(map(analogPotmeter, potMaxPositionLeft, potMaxPositionRight, maxPositionLeftFrontServo, maxPositionRightFrontServo));
     Serial.print("Servo achter: ");
-    Serial.println(map(analogPotmeter, PotuitslagLinks, PotuitslagRechts, uitslagLinksServoAchter, uitslagRechtsServerAchter));
+    Serial.println(map(analogPotmeter, potMaxPositionLeft, potMaxPositionRight, maxPositionLeftRearServo, maxPositionRightRearServo));
 
     Serial.println("Potmeter translated: ");
     Serial.print("Servo voor:  ");
-    Serial.println(map(uitslagPotmeter, PotuitslagLinks, PotuitslagRechts, uitslagLinksServoVoor, uitslagRechtsServerVoor));
+    Serial.println(map(positionPotmeter, potMaxPositionLeft, potMaxPositionRight, maxPositionLeftFrontServo, maxPositionRightFrontServo));
     Serial.print("Servo achter: ");
-    Serial.println(map(uitslagPotmeter, PotuitslagLinks, PotuitslagRechts, uitslagLinksServoAchter, uitslagRechtsServerAchter));
+    Serial.println(map(positionPotmeter, potMaxPositionLeft, potMaxPositionRight, maxPositionLeftRearServo, maxPositionRightRearServo));
 
-    debugUitslag = analogPotmeter;
+    printDebugInfo = analogPotmeter;
     printNow = 0;
   }
 
 }
 
+void updateServoPositions(int relativePosition) {
+  servoFront.write(map(relativePosition, potMaxPositionLeft, potMaxPositionRight, maxPositionLeftFrontServo, maxPositionRightFrontServo));
+  servoRear.write(map(relativePosition, potMaxPositionLeft, potMaxPositionRight, maxPositionLeftRearServo, maxPositionRightRearServo));
+  //  servoFront.write(map(positionPotmeter, potMaxPositionLeft, potMaxPositionRight, maxPositionLeftFrontServo, maxPositionRightFrontServo));
+  //  servoRear.write(map(positionPotmeter, potMaxPositionLeft, potMaxPositionRight, maxPositionLeftRearServo, maxPositionRightRearServo));
+}
+
+void translatePosition(int analogPotmeter) {
+
+  if ((analogPotmeter >= (potMiddlePosition - deadCentreWidth)) && (analogPotmeter <= (potMiddlePosition + deadCentreWidth))) {
+    analogPotmeter = potMiddlePosition;  
+  }
+ 
+  if (analogPotmeter < potMaxPositionLeft) {
+    analogPotmeter = potMaxPositionLeft;
+  }
+  if (analogPotmeter > potMaxPositionRight) {
+    analogPotmeter = potMaxPositionRight;
+  }
+
+  positionPotmeter = map(analogPotmeter, 0, 1023, potMaxPositionLeft, potMaxPositionRight);  
+
+  // debugSettings(analogPotmeter, positionPotmeter);
+  
+  if (oldPosition != analogPotmeter) {
+    updateServoPositions(analogPotmeter);
+    oldPosition = analogPotmeter;
+  }
+}
 
 void loop() {
 
-  analogPotmeter = analogRead(potpin);            // reads the value of the potentiometer (value between 0 and 1023)
-
-  if ((analogPotmeter >= (PotuitslagMidden - doodpuntBreedte)) && (analogPotmeter <= (PotuitslagMidden + doodpuntBreedte))) {
-    analogPotmeter = PotuitslagMidden;  
-  }
- 
-  if (analogPotmeter < PotuitslagLinks) {
-    analogPotmeter = PotuitslagLinks;
-  }
-  if (analogPotmeter > PotuitslagRechts) {
-    analogPotmeter = PotuitslagRechts;
-  }
-
-  uitslagPotmeter = map(analogPotmeter, 0, 1023, PotuitslagLinks, PotuitslagRechts);  
-//uitslagPotmeter = map(analogPotmeter, PotuitslagLinks, PotuitslagRechts, 0, 1023);  
-
- // debugSettings(analogPotmeter, uitslagPotmeter);
-
-  servoVoor.write(map(analogPotmeter, PotuitslagLinks, PotuitslagRechts, uitslagLinksServoVoor, uitslagRechtsServerVoor));
-  servoAchter.write(map(analogPotmeter, PotuitslagLinks, PotuitslagRechts, uitslagLinksServoAchter, uitslagRechtsServerAchter));
-//  servoVoor.write(map(uitslagPotmeter, PotuitslagLinks, PotuitslagRechts, uitslagLinksServoVoor, uitslagRechtsServerVoor));
-//  servoAchter.write(map(uitslagPotmeter, PotuitslagLinks, PotuitslagRechts, uitslagLinksServoAchter, uitslagRechtsServerAchter));
-
-  delay(15);                           // waits for the servo to get there
+  analogPotmeter = analogRead(POT_PIN);            // reads the value of the potentiometer (value between 0 and 1023)
+  translatePositions(analogPotmeter);
+  delay(15);                           
 }
 
