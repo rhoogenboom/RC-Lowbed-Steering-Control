@@ -20,7 +20,12 @@ decode_results results;
 Servo servoFront; // voorste servo (3 stuurassen)
 Servo servoRear; // achterste servo (2 stuurassen)
 
-int deadCentreWidth = 30;
+int deadCentreWidth = 10;
+
+bool needsToCenter;
+bool centered;
+bool outOfCenterLeft;
+bool outOfCenterRight;
 
 int positionPotmeter;    //huidige uitslag van potmeter vertaald van uitslag op plaat naar volledige bereik 
 int analogPotmeter;  //uitlezing van potmeter op pin
@@ -34,19 +39,26 @@ int potMiddlePosition = 1023 / 2; //waarde als potmeter in het midden staat
 int potMaxPositionLeft = 313;//0; //minimale stand van potmeter links
 int potMaxPositionRight = 713;//potMiddlePosition + (potMiddlePosition - potMaxPositionLeft); //maximale stand van potmeter rechts
 
-int maxPositionLeftFrontServo = 40; //maximale uitslag naar links voorste servo
-int maxPositionRightFrontServo = 140; //maximale uitslag naar rechts voorste servo
+int maxPositionLeftFrontServo = 60; //maximale uitslag naar links voorste servo
+int maxPositionRightFrontServo = 120; //maximale uitslag naar rechts voorste servo
 
-int maxPositionLeftRearServo = 60; //maximale uitslag naar links achterste servo
-int maxPositionRightRearServo = 120; //maximale uitslag naar rechts achterste servo
+int maxPositionLeftRearServo = 40; //maximale uitslag naar links achterste servo
+int maxPositionRightRearServo = 140; //maximale uitslag naar rechts achterste servo
 
 void setup() {
+  needsToCenter = false;
+  centered = true;
+  outOfCenterLeft = false;
+  outOfCenterRight = false;
+    
   Serial.begin(9600);
   printDebugInfo = 0;
   oldPosition = -1;
 
   servoFront.attach(SERVO_VOOR_PIN);  // servo voor
   servoRear.attach(SERVO_ACHTER_PIN); // servo achter
+
+//  irrecv.enableIRIn(); // Start the receiver
 }
 
 void debugSettings(int analogPotmeter, int positionPotmeter) {
@@ -60,6 +72,15 @@ void debugSettings(int analogPotmeter, int positionPotmeter) {
     Serial.print("Potmeter translated: ");
     Serial.println(positionPotmeter);
 
+    Serial.print("Needs to center: ");
+    Serial.println(needsToCenter == 0 ? "false" : "true");
+    Serial.print("Centered: ");
+    Serial.println(centered == 0 ? "false" : "true");
+    Serial.print("Out of center left: ");
+    Serial.println(outOfCenterLeft == 0 ? "false" : "true");
+    Serial.print("Out of center right: ");
+    Serial.println(outOfCenterRight == 0 ? "false" : "true");
+    
     Serial.println("Potmeter analog: ");
     Serial.print("Servo voor:  ");
     Serial.println(map(analogPotmeter, potMaxPositionLeft, potMaxPositionRight, maxPositionLeftFrontServo, maxPositionRightFrontServo));
@@ -84,11 +105,30 @@ void updateServoPositions(int relativePosition) {
   //  servoFront.write(map(positionPotmeter, potMaxPositionLeft, potMaxPositionRight, maxPositionLeftFrontServo, maxPositionRightFrontServo));
   //  servoRear.write(map(positionPotmeter, potMaxPositionLeft, potMaxPositionRight, maxPositionLeftRearServo, maxPositionRightRearServo));
 }
-
+ 
 void translatePosition(int analogPotmeter) {
 
+
   if ((analogPotmeter >= (potMiddlePosition - deadCentreWidth)) && (analogPotmeter <= (potMiddlePosition + deadCentreWidth))) {
+    if (outOfCenterLeft || outOfCenterRight) {
+      //we were out of center, so we need to adjust in the other direction and then go straight again.
+      if (outOfCenterRight) {
+        //adjust to the left (since we were right)
+        updateServoPositions(potMiddlePosition - (deadCentreWidth*2));
+        outOfCenterRight = false;
+        delay(100);
+      }
+      if (outOfCenterLeft) {
+        //adjust to the right (since we were left)
+        updateServoPositions(potMiddlePosition + (deadCentreWidth*5));
+        outOfCenterLeft = false;
+        delay(100);
+      }
+    }
+    
     analogPotmeter = potMiddlePosition;  
+    centered = true;
+    needsToCenter = false;
   }
  
   if (analogPotmeter < potMaxPositionLeft) {
@@ -100,18 +140,29 @@ void translatePosition(int analogPotmeter) {
 
   positionPotmeter = map(analogPotmeter, 0, 1023, potMaxPositionLeft, potMaxPositionRight);  
 
-  // debugSettings(analogPotmeter, positionPotmeter);
+  debugSettings(analogPotmeter, positionPotmeter);
   
   if (oldPosition != analogPotmeter) {
     updateServoPositions(analogPotmeter);
     oldPosition = analogPotmeter;
+ 
+   //check if we are off center left or right 
+    if (analogPotmeter <= (potMiddlePosition - deadCentreWidth)) {
+      outOfCenterLeft = true; 
+    } else if (analogPotmeter >= (potMiddlePosition + deadCentreWidth)) {
+      outOfCenterRight = true;
+    }
   }
 }
 
 void loop() {
-
+//  if (irrecv.decode(&results)) {
+//    Serial.print(char(results.value));
+//    irrecv.resume(); // Receive the next value    
+//  }
+  
   analogPotmeter = analogRead(POT_PIN);            // reads the value of the potentiometer (value between 0 and 1023)
-  translatePositions(analogPotmeter);
+  translatePosition(analogPotmeter);
   delay(15);                           
 }
 
