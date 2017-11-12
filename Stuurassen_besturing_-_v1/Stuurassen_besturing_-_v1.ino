@@ -20,7 +20,7 @@ decode_results results;
 Servo servoFront; // voorste servo (3 stuurassen)
 Servo servoRear; // achterste servo (2 stuurassen)
 
-int deadCentreWidth = 10;
+int deadCentreWidth = 2;
 
 bool needsToCenter;
 bool centered;
@@ -36,14 +36,14 @@ int printNow;
 
 int potMiddlePosition = 1023 / 2; //waarde als potmeter in het midden staat
 
-int potMaxPositionLeft = 313;//0; //minimale stand van potmeter links
-int potMaxPositionRight = 713;//potMiddlePosition + (potMiddlePosition - potMaxPositionLeft); //maximale stand van potmeter rechts
+int potMaxPositionLeft = 0;//313;//0; //minimale stand van potmeter links
+int potMaxPositionRight = potMiddlePosition + (potMiddlePosition - potMaxPositionLeft); //maximale stand van potmeter rechts
 
-int maxPositionLeftFrontServo = 60; //maximale uitslag naar links voorste servo
-int maxPositionRightFrontServo = 120; //maximale uitslag naar rechts voorste servo
+int maxPositionLeftFrontServo = 0;//60; //maximale uitslag naar links voorste servo
+int maxPositionRightFrontServo = 180;//120; //maximale uitslag naar rechts voorste servo
 
-int maxPositionLeftRearServo = 40; //maximale uitslag naar links achterste servo
-int maxPositionRightRearServo = 140; //maximale uitslag naar rechts achterste servo
+int maxPositionLeftRearServo = 0;//40; //maximale uitslag naar links achterste servo
+int maxPositionRightRearServo = 180;//140; //maximale uitslag naar rechts achterste servo
 
 void setup() {
   needsToCenter = false;
@@ -64,9 +64,8 @@ void setup() {
 void debugSettings(int analogPotmeter, int positionPotmeter) {
 
   printNow++;
-  if ((printDebugInfo != analogPotmeter) && (printNow % 15 == 0)) {
+  if ((printDebugInfo != analogPotmeter) && (printNow % 20 == 0)) {
     Serial.println("============================");
-    Serial.println("");
     Serial.print("Potmeter analog: ");
     Serial.println(analogPotmeter);
     Serial.print("Potmeter translated: ");
