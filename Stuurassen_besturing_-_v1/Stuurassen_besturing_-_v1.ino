@@ -20,7 +20,7 @@ decode_results results;
 Servo servoFront; // voorste servo (3 stuurassen)
 Servo servoRear; // achterste servo (2 stuurassen)
 
-int deadCentreWidth = 2;
+int deadCentreWidth = 30;
 
 bool needsToCenter;
 bool centered;
@@ -101,8 +101,6 @@ void debugSettings(int analogPotmeter, int positionPotmeter) {
 void updateServoPositions(int relativePosition) {
   servoFront.write(map(relativePosition, potMaxPositionLeft, potMaxPositionRight, maxPositionLeftFrontServo, maxPositionRightFrontServo));
   servoRear.write(map(relativePosition, potMaxPositionLeft, potMaxPositionRight, maxPositionLeftRearServo, maxPositionRightRearServo));
-  //  servoFront.write(map(positionPotmeter, potMaxPositionLeft, potMaxPositionRight, maxPositionLeftFrontServo, maxPositionRightFrontServo));
-  //  servoRear.write(map(positionPotmeter, potMaxPositionLeft, potMaxPositionRight, maxPositionLeftRearServo, maxPositionRightRearServo));
 }
  
 void translatePosition(int analogPotmeter) {
