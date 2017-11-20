@@ -20,15 +20,20 @@ decode_results results;
 Servo servoFront; // voorste servo (3 stuurassen)
 Servo servoRear; // achterste servo (2 stuurassen)
 
-int deadCentreWidth = 30;
+int deadCentreWidth = 2;
 
 bool needsToCenter;
 bool centered;
 bool outOfCenterLeft;
 bool outOfCenterRight;
 
-int positionPotmeter;    //huidige uitslag van potmeter vertaald van uitslag op plaat naar volledige bereik 
-int analogPotmeter;  //uitlezing van potmeter op pin
+int analogPotmeterInput;  //uitlezing van potmeter op pin
+int averagePotmeter;
+  
+//keep track of previous analog input values in configurable length array, more values more precies but slower
+const int analogInputHistoryLength = 10;
+int previousAnalogValues[analogInputHistoryLength];
+
 int oldPosition;
 
 int printDebugInfo;
@@ -36,7 +41,7 @@ int printNow;
 
 int potMiddlePosition = 1023 / 2; //waarde als potmeter in het midden staat
 
-int potMaxPositionLeft = 0;//313;//0; //minimale stand van potmeter links
+int potMaxPositionLeft = 330;//0; //minimale stand van potmeter links
 int potMaxPositionRight = potMiddlePosition + (potMiddlePosition - potMaxPositionLeft); //maximale stand van potmeter rechts
 
 int maxPositionLeftFrontServo = 0;//60; //maximale uitslag naar links voorste servo
@@ -58,16 +63,23 @@ void setup() {
   servoFront.attach(SERVO_VOOR_PIN);  // servo voor
   servoRear.attach(SERVO_ACHTER_PIN); // servo achter
 
+  //setup a number of default middle positions
+  for (int i=0;i<analogInputHistoryLength;i++) {
+    previousAnalogValues[i] =  500;
+  }
+
 //  irrecv.enableIRIn(); // Start the receiver
 }
 
-void debugSettings(int analogPotmeter, int positionPotmeter) {
+void debugSettings(int analogPotmeter, int averagePotmeter, int positionPotmeter) {
 
   printNow++;
   if ((printDebugInfo != analogPotmeter) && (printNow % 20 == 0)) {
     Serial.println("============================");
     Serial.print("Potmeter analog: ");
     Serial.println(analogPotmeter);
+    Serial.print("Potmeter average: ");
+    Serial.println(averagePotmeter);
     Serial.print("Potmeter translated: ");
     Serial.println(positionPotmeter);
 
@@ -103,8 +115,7 @@ void updateServoPositions(int relativePosition) {
   servoRear.write(map(relativePosition, potMaxPositionLeft, potMaxPositionRight, maxPositionLeftRearServo, maxPositionRightRearServo));
 }
  
-void translatePosition(int analogPotmeter) {
-
+void translatePosition(int analogPotmeter, int averagePotmeter) {
 
   if ((analogPotmeter >= (potMiddlePosition - deadCentreWidth)) && (analogPotmeter <= (potMiddlePosition + deadCentreWidth))) {
     if (outOfCenterLeft || outOfCenterRight) {
@@ -134,10 +145,11 @@ void translatePosition(int analogPotmeter) {
   if (analogPotmeter > potMaxPositionRight) {
     analogPotmeter = potMaxPositionRight;
   }
+  int positionPotmeter; 
 
   positionPotmeter = map(analogPotmeter, 0, 1023, potMaxPositionLeft, potMaxPositionRight);  
 
-  debugSettings(analogPotmeter, positionPotmeter);
+  debugSettings(analogPotmeter, averagePotmeter, positionPotmeter);
   
   if (oldPosition != analogPotmeter) {
     updateServoPositions(analogPotmeter);
@@ -152,14 +164,31 @@ void translatePosition(int analogPotmeter) {
   }
 }
 
+int storeLatestAnalogValue(int analogPotmeter) {
+  int summedPositions =  0;
+
+  //loop through every previous value, sum them and shift them 1 position to the beginning
+  for (int i=0;i<analogInputHistoryLength;i++) {
+    summedPositions += previousAnalogValues[i];
+    previousAnalogValues[i] = previousAnalogValues[i+1];
+  }
+  
+  previousAnalogValues[analogInputHistoryLength+1] = analogPotmeter; //store latest at the end
+
+  return int((summedPositions + analogPotmeter) / (analogInputHistoryLength + 1));
+}
+
 void loop() {
+
 //  if (irrecv.decode(&results)) {
 //    Serial.print(char(results.value));
 //    irrecv.resume(); // Receive the next value    
 //  }
   
-  analogPotmeter = analogRead(POT_PIN);            // reads the value of the potentiometer (value between 0 and 1023)
-  translatePosition(analogPotmeter);
-  delay(15);                           
+  analogPotmeterInput = analogRead(POT_PIN);            // reads the value of the potentiometer (value between 0 and 1023)
+
+  averagePotmeter = storeLatestAnalogValue(analogPotmeterInput);
+  translatePosition(analogPotmeterInput, averagePotmeter);
+  delay(10);                           
 }
 
