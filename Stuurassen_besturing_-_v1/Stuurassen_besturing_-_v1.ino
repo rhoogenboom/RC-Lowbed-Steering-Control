@@ -29,6 +29,7 @@ bool outOfCenterRight;
 
 int analogPotmeterInput;  //uitlezing van potmeter op pin
 int averagePotmeter;
+int positionPotmeter;
   
 //keep track of previous analog input values in configurable length array, more values more precies but slower
 const int analogInputHistoryLength = 10;
@@ -39,9 +40,10 @@ int oldPosition;
 int printDebugInfo;
 int printNow;
 
-int potMiddlePosition = 1023 / 2; //waarde als potmeter in het midden staat
+const int maxValueMeasuredForPot = 1015;
+int potMiddlePosition = 1020 / 2; //waarde als potmeter in het midden staat
 
-int potMaxPositionLeft = 330;//0; //minimale stand van potmeter links
+int potMaxPositionLeft = 250; //minimale stand van potmeter links
 int potMaxPositionRight = potMiddlePosition + (potMiddlePosition - potMaxPositionLeft); //maximale stand van potmeter rechts
 
 int maxPositionLeftFrontServo = 0;//60; //maximale uitslag naar links voorste servo
@@ -65,23 +67,21 @@ void setup() {
 
   //setup a number of default middle positions
   for (int i=0;i<analogInputHistoryLength;i++) {
-    previousAnalogValues[i] =  500;
+    previousAnalogValues[i] =  potMiddlePosition;
   }
 
 //  irrecv.enableIRIn(); // Start the receiver
 }
 
-void debugSettings(int analogPotmeter, int averagePotmeter, int positionPotmeter) {
+void debugSettings(int potmeter, int averagePotmeter) {
 
   printNow++;
-  if ((printDebugInfo != analogPotmeter) && (printNow % 20 == 0)) {
+  if ((printDebugInfo != potmeter) && (printNow % 8 == 0)) {
     Serial.println("============================");
     Serial.print("Potmeter analog: ");
-    Serial.println(analogPotmeter);
-    Serial.print("Potmeter average: ");
-    Serial.println(averagePotmeter);
-    Serial.print("Potmeter translated: ");
-    Serial.println(positionPotmeter);
+    Serial.println(potmeter);
+//    Serial.print("Potmeter average: ");
+//    Serial.println(averagePotmeter);
 
     Serial.print("Needs to center: ");
     Serial.println(needsToCenter == 0 ? "false" : "true");
@@ -92,27 +92,27 @@ void debugSettings(int analogPotmeter, int averagePotmeter, int positionPotmeter
     Serial.print("Out of center right: ");
     Serial.println(outOfCenterRight == 0 ? "false" : "true");
     
-    Serial.println("Potmeter analog: ");
+    Serial.println("Potmeter: ");
     Serial.print("Servo voor:  ");
-    Serial.println(map(analogPotmeter, potMaxPositionLeft, potMaxPositionRight, maxPositionLeftFrontServo, maxPositionRightFrontServo));
+    Serial.println(map(potmeter, 0, maxValueMeasuredForPot, maxPositionLeftFrontServo, maxPositionRightFrontServo));
     Serial.print("Servo achter: ");
-    Serial.println(map(analogPotmeter, potMaxPositionLeft, potMaxPositionRight, maxPositionLeftRearServo, maxPositionRightRearServo));
+    Serial.println(map(potmeter, 0, maxValueMeasuredForPot, maxPositionLeftRearServo, maxPositionRightRearServo));
+//
+//    Serial.println("Potmeter average: ");
+//    Serial.print("Servo voor:  ");
+//    Serial.println(map(averagePotmeter, 0, maxValueMeasuredForPot, maxPositionLeftFrontServo, maxPositionRightFrontServo));
+//    Serial.print("Servo achter: ");
+//    Serial.println(map(averagePotmeter, 0, maxValueMeasuredForPot, maxPositionLeftRearServo, maxPositionRightRearServo));
 
-    Serial.println("Potmeter translated: ");
-    Serial.print("Servo voor:  ");
-    Serial.println(map(positionPotmeter, potMaxPositionLeft, potMaxPositionRight, maxPositionLeftFrontServo, maxPositionRightFrontServo));
-    Serial.print("Servo achter: ");
-    Serial.println(map(positionPotmeter, potMaxPositionLeft, potMaxPositionRight, maxPositionLeftRearServo, maxPositionRightRearServo));
-
-    printDebugInfo = analogPotmeter;
+    printDebugInfo = potmeter;
     printNow = 0;
   }
 
 }
 
 void updateServoPositions(int relativePosition) {
-  servoFront.write(map(relativePosition, potMaxPositionLeft, potMaxPositionRight, maxPositionLeftFrontServo, maxPositionRightFrontServo));
-  servoRear.write(map(relativePosition, potMaxPositionLeft, potMaxPositionRight, maxPositionLeftRearServo, maxPositionRightRearServo));
+  servoFront.write(map(relativePosition, 0, maxValueMeasuredForPot, maxPositionLeftFrontServo, maxPositionRightFrontServo));
+  servoRear.write(map(relativePosition, 0, maxValueMeasuredForPot, maxPositionLeftRearServo, maxPositionRightRearServo));
 }
  
 void translatePosition(int analogPotmeter, int averagePotmeter) {
@@ -139,17 +139,9 @@ void translatePosition(int analogPotmeter, int averagePotmeter) {
     needsToCenter = false;
   }
  
-  if (analogPotmeter < potMaxPositionLeft) {
-    analogPotmeter = potMaxPositionLeft;
-  }
-  if (analogPotmeter > potMaxPositionRight) {
-    analogPotmeter = potMaxPositionRight;
-  }
   int positionPotmeter; 
 
-  positionPotmeter = map(analogPotmeter, 0, 1023, potMaxPositionLeft, potMaxPositionRight);  
-
-  debugSettings(analogPotmeter, averagePotmeter, positionPotmeter);
+  debugSettings(analogPotmeter, averagePotmeter);
   
   if (oldPosition != analogPotmeter) {
     updateServoPositions(analogPotmeter);
@@ -187,8 +179,17 @@ void loop() {
   
   analogPotmeterInput = analogRead(POT_PIN);            // reads the value of the potentiometer (value between 0 and 1023)
 
-  averagePotmeter = storeLatestAnalogValue(analogPotmeterInput);
-  translatePosition(analogPotmeterInput, averagePotmeter);
-  delay(10);                           
+  positionPotmeter = map(analogPotmeterInput, potMaxPositionLeft, potMaxPositionRight, 0, maxValueMeasuredForPot);  
+
+  if (positionPotmeter < potMaxPositionLeft) {
+    positionPotmeter = potMaxPositionLeft;
+  }
+  if (positionPotmeter > potMaxPositionRight) {
+    positionPotmeter = potMaxPositionRight;
+  }
+  
+  averagePotmeter = storeLatestAnalogValue(positionPotmeter);
+  translatePosition(positionPotmeter, averagePotmeter);
+  delay(20);                           
 }
 
