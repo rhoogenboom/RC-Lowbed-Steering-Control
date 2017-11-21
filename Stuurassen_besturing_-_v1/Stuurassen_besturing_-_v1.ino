@@ -28,7 +28,7 @@ bool outOfCenterLeft;
 bool outOfCenterRight;
 
 int analogPotmeterInput;  //uitlezing van potmeter op pin
-int averagePotmeter;
+int averagePotmeter;  //average value measured
 int positionPotmeter;
   
 //keep track of previous analog input values in configurable length array, more values more precies but slower
