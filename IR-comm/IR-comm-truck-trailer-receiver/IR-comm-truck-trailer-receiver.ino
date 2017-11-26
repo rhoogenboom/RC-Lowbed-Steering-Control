@@ -1,3 +1,6 @@
+#include <IRremote.h>
+#include <IRremoteInt.h>
+
 /*
  *  v1 - initial version
  * 
@@ -6,7 +9,7 @@
  * Middle -> 5v 
  * -      -> GND
  * 
- * 
+ * com6
  * 
  */
 
@@ -23,6 +26,7 @@ void setup() {
 
 void loop() {
   if (irrecv.decode(&results)) {
+
     Serial.print(char(results.value));
     irrecv.resume(); // Receive the next value    
   }
