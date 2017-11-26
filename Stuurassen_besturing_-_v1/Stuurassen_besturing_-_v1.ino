@@ -28,7 +28,7 @@ bool centered;
 bool outOfCenterLeft;
 bool outOfCenterRight;
 
-int analogPotmeterInput;  //uitlezing van potmeter op pin
+//int analogPotmeterInput;  //uitlezing van potmeter op pin
 int averagePotmeter;  //average value measured
 int positionPotmeter;
   
@@ -38,7 +38,6 @@ int previousAnalogValues[analogInputHistoryLength];
 
 int oldPosition;
 
-int printDebugInfo;
 int printNow;
 
 const int minValueMeasuredForPot = 0;
@@ -57,10 +56,11 @@ int maxPositionRightFrontServo = servoMaxPulse;//120; //maximale uitslag naar re
 int maxPositionLeftRearServo = servoMinPulse;//40; //maximale uitslag naar links achterste servo
 int maxPositionRightRearServo = servoMaxPulse;//140; //maximale uitslag naar rechts achterste servo
 
+String characterValues = ""; //concatenated numbers read over IR
+
 void setup() {
   // debug and needed for IR
- // Serial.begin(9600);
-  printDebugInfo = 0;
+  Serial.begin(9600);
   oldPosition = -1;
 
   needsToCenter = false;
@@ -80,7 +80,7 @@ void setup() {
   }
   
   // Start the IR receiver
-//  irrecv.enableIRIn(); 
+  irrecv.enableIRIn(); 
 }
 
 void debugSettings(int potmeter) {
@@ -90,14 +90,14 @@ void debugSettings(int potmeter) {
     Serial.print("Potmeter analog: ");
     Serial.println(potmeter);
 
-    Serial.print("Needs to center: ");
-    Serial.println(needsToCenter == 0 ? "false" : "true");
-    Serial.print("Centered: ");
-    Serial.println(centered == 0 ? "false" : "true");
-    Serial.print("Out of center left: ");
-    Serial.println(outOfCenterLeft == 0 ? "false" : "true");
-    Serial.print("Out of center right: ");
-    Serial.println(outOfCenterRight == 0 ? "false" : "true");
+//    Serial.print("Needs to center: ");
+//    Serial.println(needsToCenter == 0 ? "false" : "true");
+//    Serial.print("Centered: ");
+//    Serial.println(centered == 0 ? "false" : "true");
+//    Serial.print("Out of center left: ");
+//    Serial.println(outOfCenterLeft == 0 ? "false" : "true");
+//    Serial.print("Out of center right: ");
+//    Serial.println(outOfCenterRight == 0 ? "false" : "true");
     
     Serial.println("Potmeter: ");
     Serial.print("Servo voor:  ");
@@ -185,48 +185,52 @@ int getSummedTotal() {
   return total;
 }
 
-bool isNewPotPositionEnough(int potPosition) {
-  //calculate average 
-  int average = getSummedTotal() / analogInputHistoryLength;
-  int deviation = abs(average - potPosition);
-  char output[300];
-
-  //check if current position greater than X percent
-  if ( deviation > potDeviation ) {
-    sprintf(output, "Average: %d\nDeviation: %d\nPosition: %d\nLower position: %d\nHigher position: %d\n", average, deviation, potPosition, (average - deviation), (average + deviation));
-    Serial.println(output);
-    return true;
-  } else {
-    Serial.print(".");
-    return false;
-  }
-}
+//bool isNewPotPositionEnough(int potPosition) {
+//  //calculate average 
+//  int average = getSummedTotal() / analogInputHistoryLength;
+//  int deviation = abs(average - potPosition);
+//  char output[300];
+//
+//  //check if current position greater than X percent
+//  if ( deviation > potDeviation ) {
+//    sprintf(output, "Average: %d\nDeviation: %d\nPosition: %d\nLower position: %d\nHigher position: %d\n", average, deviation, potPosition, (average - deviation), (average + deviation));
+//    Serial.println(output);
+//    return true;
+//  } else {
+//    Serial.print(".");
+//    return false;
+//  }
+//}
 
 void loop() {
-//  if (irrecv.decode(&results)) {
-//    Serial.print(char(results.value));
-//    irrecv.resume(); // Receive the next value    
-//  }
 
-  // reads the value of the potentiometer
-  analogPotmeterInput = analogRead(POT_PIN);             
-  
-  // limit the pot values to what we expect them to be max left and right
-  analogPotmeterInput = limitToMaxPositionsOnPlate(analogPotmeterInput);  
+  // reads the value of the potentiometer over IR
+  if (irrecv.decode(&results)) {
 
-//  if ( isNewPotPositionEnough(analogPotmeterInput) ) { 
-    storeLatestAnalogValue(analogPotmeterInput);
-    //and then update the servo positions
+    if (int(results.value) == 2528) {
+      int analogPotmeterInput = characterValues.toInt();   
 
-    // translate plate position to relative position between max left and right
-    positionPotmeter = map(analogPotmeterInput, potMaxPositionLeft, potMaxPositionRight, minValueMeasuredForPot, maxValueMeasuredForPot); 
+      if (analogPotmeterInput == 0) Serial.println("WTF!!!!!"); 
+      //reset IR value back to empty string
+      characterValues = "";
+
+      // limit the pot values to what we expect them to be max left and right
+      analogPotmeterInput = limitToMaxPositionsOnPlate(analogPotmeterInput);  
     
-    // translate the relative pot position to a servo position and update servo positions when necessary
-    translatePosition(positionPotmeter); 
- // }
-  
+      storeLatestAnalogValue(analogPotmeterInput);
+      // translate plate position to relative position between max left and right
+      positionPotmeter = map(analogPotmeterInput, potMaxPositionLeft, potMaxPositionRight, minValueMeasuredForPot, maxValueMeasuredForPot); 
+      
+      // translate the relative pot position to a servo position and update servo positions when necessary
+      translatePosition(positionPotmeter); 
 
+    } else {
+      characterValues = characterValues + char(results.value);
+    }
+    irrecv.resume(); // Receive the next value    
+  }
+  
   //wait a while and loop
-  delay(100);                           
+  //delay(100);                           
 }
 

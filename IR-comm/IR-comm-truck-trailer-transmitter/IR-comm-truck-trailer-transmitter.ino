@@ -36,15 +36,19 @@ void sendValue(int val) {
   delay(20);
 }
 
+int minvalue = 385;
+int maxvalue = 615;
+int delaytime = 100;
+
 void loop() {
   int potValue;
 
-  for (int i=200; i <=900; i++) {
+  for (int i=minvalue; i <= maxvalue; i+=10) {
     sendValue(i);
-    delay(100);
+    delay(delaytime);
   }
-  for (int i=900; i >= 200; i--) {
+  for (int i=maxvalue; i >= minvalue; i-=10) {
     sendValue(i);
-    delay(100);
+    delay(delaytime);
   }
 }
