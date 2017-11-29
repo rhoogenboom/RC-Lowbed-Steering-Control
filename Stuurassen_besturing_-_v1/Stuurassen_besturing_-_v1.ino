@@ -44,11 +44,11 @@ const int minValueMeasuredForPot = 0;
 const int maxValueMeasuredForPot = 1023;
 int potMiddlePosition = maxValueMeasuredForPot / 2; //waarde als potmeter in het midden staat
 
-int potMaxPositionLeft = 250; //minimale stand van potmeter links
+int potMaxPositionLeft = 300; //minimale stand van potmeter links
 int potMaxPositionRight = potMiddlePosition + (potMiddlePosition - potMaxPositionLeft); //maximale stand van potmeter rechts
 
-const int servoMinPulse = 750;
-const int servoMaxPulse = 2250;
+const int servoMinPulse = 1200;
+const int servoMaxPulse = 1800;
 
 int maxPositionLeftFrontServo = servoMinPulse;//60; //maximale uitslag naar links voorste servo
 int maxPositionRightFrontServo = servoMaxPulse;//120; //maximale uitslag naar rechts voorste servo
@@ -80,7 +80,7 @@ void setup() {
   }
   
   // Start the IR receiver
-  irrecv.enableIRIn(); 
+  //irrecv.enableIRIn(); 
 }
 
 void debugSettings(int potmeter) {
@@ -205,10 +205,14 @@ int getSummedTotal() {
 void loop() {
 
   // reads the value of the potentiometer over IR
-  if (irrecv.decode(&results)) {
+//  if (irrecv.decode(&results)) {
 
-    if (int(results.value) == 2528) {
-      int analogPotmeterInput = characterValues.toInt();   
+//    if (int(results.value) == 2528) {
+      // read input from IR
+      //int analogPotmeterInput = characterValues.toInt();   
+      // reads the value of the potentiometer
+      int analogPotmeterInput = analogRead(POT_PIN); 
+
 
       if (analogPotmeterInput == 0) Serial.println("WTF!!!!!"); 
       //reset IR value back to empty string
@@ -224,13 +228,13 @@ void loop() {
       // translate the relative pot position to a servo position and update servo positions when necessary
       translatePosition(positionPotmeter); 
 
-    } else {
-      characterValues = characterValues + char(results.value);
-    }
-    irrecv.resume(); // Receive the next value    
-  }
+//    } else {
+//      characterValues = characterValues + char(results.value);
+//    }
+//    irrecv.resume(); // Receive the next value    
+//  }
   
   //wait a while and loop
-  //delay(100);                           
+  delay(10);                           
 }
 
