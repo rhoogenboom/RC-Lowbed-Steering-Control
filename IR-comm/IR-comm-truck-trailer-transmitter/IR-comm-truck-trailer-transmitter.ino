@@ -46,9 +46,13 @@ void loop() {
   for (int i=minvalue; i <= maxvalue; i+=10) {
     sendValue(i);
     delay(delaytime);
+    Serial.println(i);
+
   }
   for (int i=maxvalue; i >= minvalue; i-=10) {
     sendValue(i);
     delay(delaytime);
+    Serial.println(i);
+    
   }
 }

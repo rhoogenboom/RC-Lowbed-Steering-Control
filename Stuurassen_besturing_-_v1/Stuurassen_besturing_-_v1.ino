@@ -229,5 +229,6 @@ void loop() {
   
   //wait a while and loop
   delay(10);                           
+  Serial.print(". ");
 }
 
