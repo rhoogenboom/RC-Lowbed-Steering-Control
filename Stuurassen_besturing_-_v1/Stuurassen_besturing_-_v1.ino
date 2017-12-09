@@ -9,12 +9,12 @@
 #include <IRremote.h>
 
 int IR_RECV_PIN = 11;
-int SERVO_VOOR_PIN = 9;
-int SERVO_ACHTER_PIN = 10;
-int POT_PIN = 0; //potmeter pin
+int SERVO_VOOR_PIN = 6;
+int SERVO_ACHTER_PIN = 7;
+int POT_PIN = A2; //potmeter pin
 
 
-IRrecv irrecv(IR_RECV_PIN);
+//IRrecv irrecv(IR_RECV_PIN);
 decode_results results;
 
 Servo servoFront; // voorste servo (3 stuurassen)
@@ -59,6 +59,9 @@ int maxPositionRightRearServo = servoMaxPulse;//140; //maximale uitslag naar rec
 String characterValues = ""; //concatenated numbers read over IR
 
 void setup() {
+
+  pinMode(POT_PIN, INPUT); 
+
   // debug and needed for IR
   Serial.begin(9600);
   oldPosition = -1;
@@ -212,7 +215,6 @@ void loop() {
       //int analogPotmeterInput = characterValues.toInt();   
       // reads the value of the potentiometer
       int analogPotmeterInput = analogRead(POT_PIN); 
-
 
       if (analogPotmeterInput == 0) Serial.println("WTF!!!!!"); 
       //reset IR value back to empty string
