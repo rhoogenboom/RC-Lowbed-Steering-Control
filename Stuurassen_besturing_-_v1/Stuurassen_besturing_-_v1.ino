@@ -14,7 +14,7 @@ int SERVO_ACHTER_PIN = 7;
 int POT_PIN = A2; //potmeter pin
 
 
-//IRrecv irrecv(IR_RECV_PIN);
+IRrecv irrecv(IR_RECV_PIN);
 decode_results results;
 
 Servo servoFront; // voorste servo (3 stuurassen)
@@ -83,7 +83,7 @@ void setup() {
   }
   
   // Start the IR receiver
-  //irrecv.enableIRIn(); 
+  irrecv.enableIRIn(); 
 }
 
 void debugSettings(int potmeter) {
@@ -92,15 +92,6 @@ void debugSettings(int potmeter) {
     Serial.println("============================");
     Serial.print("Potmeter analog: ");
     Serial.println(potmeter);
-
-//    Serial.print("Needs to center: ");
-//    Serial.println(needsToCenter == 0 ? "false" : "true");
-//    Serial.print("Centered: ");
-//    Serial.println(centered == 0 ? "false" : "true");
-//    Serial.print("Out of center left: ");
-//    Serial.println(outOfCenterLeft == 0 ? "false" : "true");
-//    Serial.print("Out of center right: ");
-//    Serial.println(outOfCenterRight == 0 ? "false" : "true");
     
     Serial.println("Potmeter: ");
     Serial.print("Servo voor:  ");
@@ -208,13 +199,13 @@ int getSummedTotal() {
 void loop() {
 
   // reads the value of the potentiometer over IR
-//  if (irrecv.decode(&results)) {
+  if (irrecv.decode(&results)) {
 
-//    if (int(results.value) == 2528) {
+    if (int(results.value) == 2528) {
       // read input from IR
-      //int analogPotmeterInput = characterValues.toInt();   
-      // reads the value of the potentiometer
-      int analogPotmeterInput = analogRead(POT_PIN); 
+      int analogPotmeterInput = characterValues.toInt();   
+      //// reads the value of the potentiometer
+      //int analogPotmeterInput = analogRead(POT_PIN); 
 
       if (analogPotmeterInput == 0) Serial.println("WTF!!!!!"); 
       //reset IR value back to empty string
@@ -230,11 +221,11 @@ void loop() {
       // translate the relative pot position to a servo position and update servo positions when necessary
       translatePosition(positionPotmeter); 
 
-//    } else {
-//      characterValues = characterValues + char(results.value);
-//    }
-//    irrecv.resume(); // Receive the next value    
-//  }
+    } else {
+      characterValues = characterValues + char(results.value);
+    }
+    irrecv.resume(); // Receive the next value    
+  }
   
   //wait a while and loop
   delay(10);                           
