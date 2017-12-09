@@ -6,7 +6,7 @@
 */
 
 #include <Servo.h>
-#include <IRremote.h>
+//#include <IRremote.h>
 
 int IR_RECV_PIN = 11;
 int SERVO_VOOR_PIN = 6;
@@ -15,7 +15,7 @@ int POT_PIN = A2; //potmeter pin
 
 
 //IRrecv irrecv(IR_RECV_PIN);
-decode_results results;
+//decode_results results;
 
 Servo servoFront; // voorste servo (3 stuurassen)
 Servo servoRear; // achterste servo (2 stuurassen)
@@ -238,6 +238,6 @@ void loop() {
   
   //wait a while and loop
   delay(10);                           
-  Serial.print(". ");
+//  Serial.print(". ");
 }
 
