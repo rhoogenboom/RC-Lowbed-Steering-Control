@@ -101,8 +101,13 @@ void updateServoPositions(int relativePosition) {
  
 void translatePosition(int analogPotmeter) {
 
-  debugSettings(analogPotmeter);
-  updateServoPositions(analogPotmeter);
+  //if (abs(analogPotmeter - oldPosition) < 100) {
+    debugSettings(analogPotmeter);
+    updateServoPositions(analogPotmeter);
+//  }
+//  else {
+//    Serial.println("Crazy Ivan!!");
+//  }
 }
 
 void storeLatestAnalogValue(int analogPotmeter) {
