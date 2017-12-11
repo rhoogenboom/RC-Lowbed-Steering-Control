@@ -8,11 +8,14 @@
 #include <Servo.h>
 //#include <IRremote.h>
 
+int RECEIVER_CHANNEL_1 = 5;
+
 int IR_RECV_PIN = 11;
 int SERVO_VOOR_PIN = 6;
 int SERVO_ACHTER_PIN = 7;
 int POT_PIN = A2; //potmeter pin
 
+int channel_1;
 
 //IRrecv irrecv(IR_RECV_PIN);
 //decode_results results;
@@ -54,7 +57,8 @@ int maxPositionRightRearServo = servoMaxPulse; //maximale uitslag naar rechts ac
 String characterValues = ""; //concatenated numbers read over IR
 
 void setup() {
-
+  pinMode(RECEIVER_CHANNEL_1, INPUT); //receiver channel 1
+  
   pinMode(POT_PIN, INPUT); 
 
   // debug and needed for IR
@@ -79,7 +83,14 @@ void setup() {
 void debugSettings(int potmeter) {
 
   if ( abs(potmeter-oldPosition) > 3) {
-    Serial.println("============================");
+    Serial.write(27); Serial.print("[2J"); // clear screen command
+    Serial.write(27); Serial.print("[H"); // home cursor
+  
+    //Serial.println("============================");
+
+    Serial.print("Channel 1:"); // Print the value of 
+    Serial.println(channel_1);        // each channel
+      
     Serial.print("Potmeter analog: ");
     Serial.println(potmeter);
   
@@ -169,6 +180,8 @@ int getSummedTotal() {
 //}
 
 void loop() {
+
+  channel_1 = pulseIn(RECEIVER_CHANNEL_1, HIGH, 25000); // Read the pulse width of 
 
   // reads the value of the potentiometer over IR
 //  if (irrecv.decode(&results)) {
