@@ -1,31 +1,31 @@
 /*
-   v1 - eerste versie met 2 servo en variabele instelling
-
-
-
+   v1 - place control with receiver overrule
 */
 
-#include <Servo.h>
+#include <EnableInterrupt.h>
 //#include <IRremote.h>
 
-int RECEIVER_CHANNEL_1 = 5;
+#define RC_NUM_CHANNELS  1
+#define RC_CH1  0
+#define RC_CH1_INPUT  A0
 
-int IR_RECV_PIN = 11;
-int SERVO_VOOR_PIN = 6;
-int SERVO_ACHTER_PIN = 7;
-int POT_PIN = A2; //potmeter pin
+uint16_t rc_values[RC_NUM_CHANNELS];
+uint32_t rc_start[RC_NUM_CHANNELS];
+volatile uint16_t rc_shared[RC_NUM_CHANNELS];
+
+#define POT_PIN A2  //potmeter pin
+
+#define TRAILER_OUTPUT_PIN 3 //output to the trailer connector
 
 int analogReceiverInput;
 
-const int CHANNEL_CENTER = 1500;
-const int MIN_CHANNEL = 1000;
-const int MAX_CHANNEL = 2000;
+const int CHANNEL_CENTER = 511;
+const int CHANNEL_DEADCENTER = 10;
+const int MIN_CHANNEL = 875;
+const int MAX_CHANNEL = 2125;
 
 //IRrecv irrecv(IR_RECV_PIN);
 //decode_results results;
-
-Servo servoFront; // voorste servo (3 stuurassen)
-Servo servoRear; // achterste servo (2 stuurassen)
 
 int deadCentreWidth = 2;
 int potDeviation = 25;
@@ -44,7 +44,7 @@ int printNow;
 
 const int minValueMeasuredForPot = 0;
 const int maxValueMeasuredForPot = 1023;
-int potMiddlePosition = 492; //overrule door plaatsing van magneet maxValueMeasuredForPot / 2; //waarde als potmeter in het midden staat
+int potMiddlePosition = 504; //492; //overrule door plaatsing van magneet maxValueMeasuredForPot / 2; //waarde als potmeter in het midden staat
 
 const int potMaxPositionLeft = 300; //minimale stand van potmeter links
 const int potMaxPositionRight = potMiddlePosition + (potMiddlePosition - potMaxPositionLeft); //maximale stand van potmeter rechts
@@ -60,28 +60,44 @@ int maxPositionRightRearServo = servoMaxPulse; //maximale uitslag naar rechts ac
 
 String characterValues = ""; //concatenated numbers read over IR
 
+
+void rc_read_values() {
+  noInterrupts();
+  memcpy(rc_values, (const void *)rc_shared, sizeof(rc_shared));
+  interrupts();
+}
+
+void calc_input(uint8_t channel, uint8_t input_pin) {
+  if (digitalRead(input_pin) == HIGH) {
+    rc_start[channel] = micros();
+  } else {
+    uint16_t rc_compare = (uint16_t)(micros() - rc_start[channel]);
+    rc_shared[channel] = rc_compare;
+  }
+}
+
+void calc_ch1() { calc_input(RC_CH1, RC_CH1_INPUT); }
+
+
 void setup() {
-  pinMode(RECEIVER_CHANNEL_1, INPUT); //receiver channel 1
-  
+  //read the input from the receiver
+  pinMode(RC_CH1_INPUT, INPUT); //receiver channel 1
+  enableInterrupt(RC_CH1_INPUT, calc_ch1, CHANGE);
+
+  //read the input from the potmeter
   pinMode(POT_PIN, INPUT); 
+
+  //send the calculated value to the trailer
+  pinMode(TRAILER_OUTPUT_PIN, OUTPUT);
 
   // debug and needed for IR
   Serial.begin(9600);
   oldPosition = -1;
 
-  // first steering servo at the front
-  servoFront.attach(SERVO_VOOR_PIN);  
-  
-  // second steering servo at the front
-  servoRear.attach(SERVO_ACHTER_PIN); 
-
   //setup a number of default middle positions
   for (int i=0;i<analogInputHistoryLength;i++) {
     previousAnalogValues[i] =  potMiddlePosition;
   }
-  
-  // Start the IR receiver
-  //irrecv.enableIRIn(); 
 }
 
 void debugSettings(int potmeter) {
@@ -92,43 +108,27 @@ void debugSettings(int potmeter) {
   
     //Serial.println("============================");
 
-    Serial.print("Channel 1:"); // Print the value of 
-    Serial.println(analogReceiverInput);        // each channel
+    Serial.print("Chnl: "); // Print the value of 
+    Serial.print(analogReceiverInput);        // each channel
+    Serial.print("\t");
       
-    Serial.print("Potmeter analog: ");
-    Serial.println(potmeter);
-  
-    Serial.println("Potmeter: ");
-    Serial.print("Servo voor:  ");
+    Serial.print("Pot:  ");
+    Serial.print(potmeter);
+    Serial.print("\t");
+      
+    Serial.print("Servo:  ");
     Serial.println(map(potmeter, 0, maxValueMeasuredForPot, maxPositionLeftFrontServo, maxPositionRightFrontServo));
-    Serial.print("Servo achter: ");
-    Serial.println(map(potmeter, 0, maxValueMeasuredForPot, maxPositionLeftRearServo, maxPositionRightRearServo));
-    
     oldPosition = potmeter;
   }
-
 }
 
-void updateServoPositions(int relativePosition) {
-  servoFront.write(map(relativePosition, 0, maxValueMeasuredForPot, maxPositionLeftFrontServo, maxPositionRightFrontServo));
-  servoRear.write(map(relativePosition, 0, maxValueMeasuredForPot, maxPositionLeftRearServo, maxPositionRightRearServo));
-}
- 
 void translatePosition(int analogPotmeter) {
-
-  //if (abs(analogPotmeter - oldPosition) < 100) {
     debugSettings(analogPotmeter);
-    updateServoPositions(analogPotmeter);
-//  }
-//  else {
-//    Serial.println("Crazy Ivan!!");
-//  }
 }
 
 void storeLatestAnalogValue(int analogPotmeter) {
   //store latest pot position 
   //TODO: should be done based on the last X measurements which lead to a movement of the servos, only servo movements should be averaged out
-  
   int summedPositions =  0;
 
   //loop through every previous value, sum them and shift them 1 position to the beginning eventually making room at the end for the latest value
@@ -157,9 +157,8 @@ int limitToMaxPositionsOnPlate(int input) {
 
 int limitToMaxPositionsFromReceiver(int input) {
   //below limits the receiver input range to the pot range so we can we can subtract or add them together
-  return map(input, MIN_CHANNEL, MAX_CHANNEL, servoMinPulse, servoMaxPulse);
+  return map(input, MIN_CHANNEL, MAX_CHANNEL, minValueMeasuredForPot, maxValueMeasuredForPot);
 }
-
 
 int getSummedTotal() {
   int total = 0;
@@ -172,49 +171,51 @@ int getSummedTotal() {
   return total;
 }
 
-int readReceiver(int pin) {
-  return pulseIn(RECEIVER_CHANNEL_1, HIGH, 25000); // Read the pulse width of input pin 
+int mixPlateAndReceiverInput(int receiver, int potmeter) {
+  //if receiver is centered we can just get out of here with just the potmeter
+  if ( receiver == 0 || receiver < (CHANNEL_CENTER - CHANNEL_DEADCENTER) || receiver > (CHANNEL_CENTER + CHANNEL_DEADCENTER)) {
+    //receiver is not centered, so do something with it
+    if (receiver <= CHANNEL_CENTER) {
+      // we need to subtract it from potmeter
+      //Serial.print("L");
+      return (potmeter - abs((CHANNEL_CENTER-receiver)));
+    } else {
+      //Serial.print("R");
+      //we need to add it to potmeter
+      return (potmeter + (receiver-CHANNEL_CENTER));
+    }
+  } else {
+    //Serial.print("*");
+    return potmeter;
+  }
 }
 
 void loop() {
+  // reads the value of the potentiometer
+  int analogPotmeterInput = analogRead(POT_PIN); 
 
-  // reads the value of the potentiometer over IR
-//  if (irrecv.decode(&results)) {
+  // reads the value from the receiver
+  rc_read_values();
 
-//    if (int(results.value) == 2528) {
-      // read input from IR
-      //int analogPotmeterInput = characterValues.toInt();   
+  //translate the receiver input to the same range of the pot input
+  analogReceiverInput = limitToMaxPositionsFromReceiver(rc_values[RC_CH1]);
 
-      // reads the value of the potentiometer
-      int analogPotmeterInput = analogRead(POT_PIN); 
-
-      // reads the value from the receiver
-      analogReceiverInput = readReceiver(RECEIVER_CHANNEL_1);
-
-      //translate the receiver input to the same range of the pot input
-      analogReceiverInput = limitToMaxPositionsFromReceiver(analogReceiverInput);
-      
-      if (analogPotmeterInput == 0) Serial.println("WTF!!!!!"); 
-      //reset IR value back to empty string
-      characterValues = "";
-
-      // limit the pot values to what we expect them to be max left and right
-      analogPotmeterInput = limitToMaxPositionsOnPlate(analogPotmeterInput);  
-    
-      storeLatestAnalogValue(analogPotmeterInput);
-      // translate plate position to relative position between max left and right
-      positionPotmeter = map(analogPotmeterInput, potMaxPositionLeft, potMaxPositionRight, minValueMeasuredForPot, maxValueMeasuredForPot); 
-      
-      // translate the relative pot position to a servo position and update servo positions when necessary
-      translatePosition(positionPotmeter); 
-
-//    } else {
-//      characterValues = characterValues + char(results.value);
-//    }
-//    irrecv.resume(); // Receive the next value    
-//  }
+  //mix the receiver and the pot together but only when the sticks are out of center
+  analogPotmeterInput = mixPlateAndReceiverInput(analogReceiverInput,analogPotmeterInput);
   
-  //wait a while and loop
-  delay(10);                           
+  // limit the pot values to what we expect them to be max left and right
+  analogPotmeterInput = limitToMaxPositionsOnPlate(analogPotmeterInput);  
+
+  //write the calculated value to the trailer
+  analogWrite(TRAILER_OUTPUT_PIN , analogPotmeterInput);
+  
+  storeLatestAnalogValue(analogPotmeterInput);
+  
+  // translate plate position to relative position between max left and right
+  positionPotmeter = map(analogPotmeterInput, potMaxPositionLeft, potMaxPositionRight, minValueMeasuredForPot, maxValueMeasuredForPot); 
+  
+  // translate the relative pot position to a servo position and update servo positions when necessary
+  translatePosition(positionPotmeter); 
+  delay(5);                           
 }
 
