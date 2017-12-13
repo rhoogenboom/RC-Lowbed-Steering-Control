@@ -8,18 +8,9 @@
 #include <Servo.h>
 //#include <IRremote.h>
 
-int RECEIVER_CHANNEL_1 = 5;
-
-int IR_RECV_PIN = 11;
 int SERVO_VOOR_PIN = 6;
 int SERVO_ACHTER_PIN = 7;
 int POT_PIN = A2; //potmeter pin
-
-int analogReceiverInput;
-
-const int CHANNEL_CENTER = 1500;
-const int MIN_CHANNEL = 1000;
-const int MAX_CHANNEL = 2000;
 
 //IRrecv irrecv(IR_RECV_PIN);
 //decode_results results;
@@ -30,7 +21,6 @@ Servo servoRear; // achterste servo (2 stuurassen)
 int deadCentreWidth = 2;
 int potDeviation = 25;
 
-//int analogPotmeterInput;  //uitlezing van potmeter op pin
 int averagePotmeter;  //average value measured
 int positionPotmeter;
   
@@ -61,8 +51,6 @@ int maxPositionRightRearServo = servoMaxPulse; //maximale uitslag naar rechts ac
 String characterValues = ""; //concatenated numbers read over IR
 
 void setup() {
-  pinMode(RECEIVER_CHANNEL_1, INPUT); //receiver channel 1
-  
   pinMode(POT_PIN, INPUT); 
 
   // debug and needed for IR
@@ -90,11 +78,6 @@ void debugSettings(int potmeter) {
     //Serial.write(27); Serial.print("[2J"); // clear screen command
     //Serial.write(27); Serial.print("[H"); // home cursor
   
-    //Serial.println("============================");
-
-    Serial.print("Channel 1:"); // Print the value of 
-    Serial.println(analogReceiverInput);        // each channel
-      
     Serial.print("Potmeter analog: ");
     Serial.println(potmeter);
   
@@ -155,12 +138,6 @@ int limitToMaxPositionsOnPlate(int input) {
   return input;
 }
 
-int limitToMaxPositionsFromReceiver(int input) {
-  //below limits the receiver input range to the pot range so we can we can subtract or add them together
-  return map(input, MIN_CHANNEL, MAX_CHANNEL, servoMinPulse, servoMaxPulse);
-}
-
-
 int getSummedTotal() {
   int total = 0;
 
@@ -170,10 +147,6 @@ int getSummedTotal() {
     }
 
   return total;
-}
-
-int readReceiver(int pin) {
-  return pulseIn(RECEIVER_CHANNEL_1, HIGH, 25000); // Read the pulse width of input pin 
 }
 
 void loop() {
@@ -187,12 +160,6 @@ void loop() {
 
       // reads the value of the potentiometer
       int analogPotmeterInput = analogRead(POT_PIN); 
-
-      // reads the value from the receiver
-      analogReceiverInput = readReceiver(RECEIVER_CHANNEL_1);
-
-      //translate the receiver input to the same range of the pot input
-      analogReceiverInput = limitToMaxPositionsFromReceiver(analogReceiverInput);
       
       if (analogPotmeterInput == 0) Serial.println("WTF!!!!!"); 
       //reset IR value back to empty string
