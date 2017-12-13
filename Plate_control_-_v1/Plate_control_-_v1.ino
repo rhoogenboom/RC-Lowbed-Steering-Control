@@ -207,7 +207,7 @@ void loop() {
   analogPotmeterInput = limitToMaxPositionsOnPlate(analogPotmeterInput);  
 
   //write the calculated value to the trailer
-  analogWrite(TRAILER_OUTPUT_PIN , analogPotmeterInput);
+  analogWrite(TRAILER_OUTPUT_PIN , analogPotmeterInput/4);
   
   storeLatestAnalogValue(analogPotmeterInput);
   
