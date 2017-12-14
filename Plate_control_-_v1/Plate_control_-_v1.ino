@@ -212,7 +212,7 @@ void loop() {
   int positionPotmeter = map(analogPotmeterInput, potMaxPositionLeft, potMaxPositionRight, minValueMeasuredForPot, maxValueMeasuredForPot); 
   
   //write the calculated value to the trailer
-  writeValueToTrailer(positionPotmeter);
+  writeValueToTrailer(analogPotmeterInput);
     
   // translate the relative pot position to a servo position and update servo positions when necessary
   debugSettings(positionPotmeter, analogReceiverInput); 
