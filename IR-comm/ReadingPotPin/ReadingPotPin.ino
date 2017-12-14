@@ -5,6 +5,7 @@ SoftwareSerial mySerial(10, 11); // RX, TX
 bool startFound = false;
 bool endFound = false;
 String result = "";
+int oldValue = -1;
 
 void setup() {
   // Open serial communications and wait for port to open:
@@ -16,8 +17,8 @@ void setup() {
   
 }
 
-void loop() { // run over and over
-  if (mySerial.available()) {
+int readSerialInput() {
+ if (mySerial.available()) {
     //read one byte
     unsigned char input = mySerial.read();
     switch (input) {
@@ -34,9 +35,24 @@ void loop() { // run over and over
     }
 
     if (endFound) {
-      Serial.println(result);
+      //Serial.println(result);
       endFound = false;
-      result = "";  
+      int r = result.toInt();
+      result = ""; 
+      return r;
     }
   }
+
+  return -1;  
+}
+
+void loop() { // run over and over
+
+  int pot = readSerialInput();
+  if (pot != -1 && oldValue != pot) {
+    Serial.print("new value:  ");
+    Serial.println(pot);
+    oldValue = pot;
+  }
+
 }
