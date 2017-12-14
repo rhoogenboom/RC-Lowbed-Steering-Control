@@ -32,7 +32,7 @@ const int minValueMeasuredForPot = 0;
 const int maxValueMeasuredForPot = 1023;
 int potMiddlePosition = 504; //492; //overrule door plaatsing van magneet maxValueMeasuredForPot / 2; //waarde als potmeter in het midden staat
 
-const int potMaxPositionLeft = 300; //minimale stand van potmeter links
+const int potMaxPositionLeft = 350; //minimale stand van potmeter links
 const int potMaxPositionRight = potMiddlePosition + (potMiddlePosition - potMaxPositionLeft); //maximale stand van potmeter rechts
 
 const int servoMinPulse = 1200;
@@ -117,21 +117,6 @@ void debugSettings(int potmeter, int receiver) {
   }
 }
 
-//void storeLatestAnalogValue(int analogPotmeter) {
-//  //store latest pot position 
-//  //TODO: should be done based on the last X measurements which lead to a movement of the servos, only servo movements should be averaged out
-//  int summedPositions =  0;
-//
-//  //loop through every previous value, sum them and shift them 1 position to the beginning eventually making room at the end for the latest value
-//  for (int i=0;i<analogInputHistoryLength;i++) {
-//    summedPositions += previousAnalogValues[i];
-//    previousAnalogValues[i] = previousAnalogValues[i+1];
-//  }
-//  
-//  //store latest at the end
-//  previousAnalogValues[analogInputHistoryLength+1] = analogPotmeter; 
-//}
-
 int limitToMaxPositionsOnPlate(int input) {
   //below limits the range which we consider the full movement between truck and trailer angle, either left of right
   
@@ -212,7 +197,7 @@ void loop() {
   int positionPotmeter = map(analogPotmeterInput, potMaxPositionLeft, potMaxPositionRight, minValueMeasuredForPot, maxValueMeasuredForPot); 
   
   //write the calculated value to the trailer
-  writeValueToTrailer(analogPotmeterInput);
+  writeValueToTrailer(map(positionPotmeter, 0, maxValueMeasuredForPot, maxPositionLeftFrontServo, maxPositionRightFrontServo));
     
   // translate the relative pot position to a servo position and update servo positions when necessary
   debugSettings(positionPotmeter, analogReceiverInput); 
