@@ -1,16 +1,42 @@
-int POT_PIN = A2; //potmeter pin
+#include <SoftwareSerial.h>
+
+SoftwareSerial mySerial(10, 11); // RX, TX
+
+bool startFound = false;
+bool endFound = false;
+String result = "";
 
 void setup() {
-  // put your setup code here, to run once:
-  pinMode(POT_PIN, INPUT); 
-    Serial.begin(9600);
-    
+  // Open serial communications and wait for port to open:
+  Serial.begin(9600);
+  
+  // set the data rate for the SoftwareSerial port
+  mySerial.begin(9600);
+
+  
 }
 
-void loop() {
-  // put your main code here, to run repeatedly:
+void loop() { // run over and over
+  if (mySerial.available()) {
+    //read one byte
+    unsigned char input = mySerial.read();
+    switch (input) {
+      case 0x02:
+        startFound = true;
+        endFound = false;       
+        break;
+     case 0x03:
+        startFound = false;
+        endFound = true;
+        break;
+     default:
+        result = result + char(input);
+    }
 
-  Serial.println(analogRead(POT_PIN));
-
-  delay(100);    
+    if (endFound) {
+      Serial.println(result);
+      endFound = false;
+      result = "";  
+    }
+  }
 }
