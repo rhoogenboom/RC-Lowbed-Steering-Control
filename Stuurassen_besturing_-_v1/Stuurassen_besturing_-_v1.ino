@@ -17,6 +17,9 @@ SoftwareSerial serialInput(10, 11); // RX, TX
 bool startFound = false;
 bool endFound = false;
 
+const int servoMinPulse = 1200;
+const int servoMaxPulse = 1800;
+
 Servo servoFront; // voorste servo (3 stuurassen)
 Servo servoRear; // achterste servo (2 stuurassen)
 
@@ -89,13 +92,29 @@ int readSerialInput() {
   return -1;  
 }
 
+
+int limitToMaxPositionsServo(int input) {
+  //below limits the range which we consider the full movement between truck and trailer angle, either left of right
+  
+  //if input is smaller than the minimum we would accept, update to minimum
+  if (input < servoMinPulse) {
+    input = servoMinPulse;
+  }
+  //if input is larger than the maximum we would accept, update to maximum
+  if (input > servoMaxPulse) {
+    input = servoMaxPulse;
+  }
+  return input;
+}
+
 void loop() {
   // read input from IR/serial
   int analogPotmeterInput = readSerialInput();   
   
   if (analogPotmeterInput != -1) {
+    analogPotmeterInput = limitToMaxPositionsServo(analogPotmeterInput);
     debugSettings(analogPotmeterInput);
     updateServoPositions(analogPotmeterInput);
-  }
+  }  
 }
 

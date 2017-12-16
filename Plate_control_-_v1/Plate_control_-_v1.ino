@@ -98,6 +98,9 @@ void setup() {
 void debugSettings(int potmeter, int receiver) {
 
   if ( abs(potmeter-oldPosition) > 3) {
+    //write the calculated value to the trailer
+    writeValueToTrailer(map(potmeter, 0, maxValueMeasuredForPot, maxPositionLeftFrontServo, maxPositionRightFrontServo));
+
     //Serial.write(27); Serial.print("[2J"); // clear screen command
     //Serial.write(27); Serial.print("[H"); // home cursor
   
@@ -196,9 +199,6 @@ void loop() {
   // translate plate position to relative position between max left and right
   int positionPotmeter = map(analogPotmeterInput, potMaxPositionLeft, potMaxPositionRight, minValueMeasuredForPot, maxValueMeasuredForPot); 
   
-  //write the calculated value to the trailer
-  writeValueToTrailer(map(positionPotmeter, 0, maxValueMeasuredForPot, maxPositionLeftFrontServo, maxPositionRightFrontServo));
-    
   // translate the relative pot position to a servo position and update servo positions when necessary
   debugSettings(positionPotmeter, analogReceiverInput); 
   delay(25);                           
