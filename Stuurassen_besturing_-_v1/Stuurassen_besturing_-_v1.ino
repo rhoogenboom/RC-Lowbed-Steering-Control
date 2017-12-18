@@ -42,7 +42,7 @@ void setup() {
   //irrecv.enableIRIn(); 
 
   // set the data rate for the SoftwareSerial port
-  serialInput.begin(9600);
+  serialInput.begin(57600);
 
   updateServoPositions(1500);
 }
@@ -115,6 +115,7 @@ void loop() {
     analogPotmeterInput = limitToMaxPositionsServo(analogPotmeterInput);
     debugSettings(analogPotmeterInput);
     updateServoPositions(analogPotmeterInput);
+    delay(250);
   }  
 }
 

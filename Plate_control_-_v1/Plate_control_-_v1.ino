@@ -92,7 +92,7 @@ void setup() {
     previousAnalogValues[i] =  potMiddlePosition;
   }
 
-  serialOut.begin(9600);
+  serialOut.begin(57600);
 }
 
 void debugSettings(int potmeter, int receiver) {
@@ -201,6 +201,6 @@ void loop() {
   
   // translate the relative pot position to a servo position and update servo positions when necessary
   debugSettings(positionPotmeter, analogReceiverInput); 
-  delay(25);                           
+  delay(250);                           
 }
 
