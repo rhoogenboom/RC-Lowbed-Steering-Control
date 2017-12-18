@@ -1,11 +1,14 @@
 /*
   v1 - eerste versie met 2 servo en variabele instelling
   v2 - added serial communication
+  v3 - adding average value to determine max change
 */
 
 #include <Servo.h>
 #include <SoftwareSerial.h>
 //#include <IRremote.h>
+
+#define inputHistoryLength 10
 
 int SERVO_VOOR_PIN = 6;
 int SERVO_ACHTER_PIN = 7;
@@ -59,6 +62,50 @@ void debugSettings(int servo) {
   }
 }
 
+int getSummedTotal() {
+  int total = 0;
+
+    for (int i=0;i<inputHistoryLength;i++) {
+      total += previousAnalogValues[i];
+      previousAnalogValues[i] = previousAnalogValues[i+1];
+    }
+
+  return total;
+}
+
+bool isNewPotPositionEnough(int potPosition) {
+  //calculate average 
+  int average = getSummedTotal() / inputHistoryLength;
+  int deviation = abs(average - potPosition);
+  char output[300];
+
+  //check if current position greater than X percent
+  if ( deviation > potDeviation ) {
+    sprintf(output, "Average: %d\nDeviation: %d\nPosition: %d\nLower position: %d\nHigher position: %d\n", average, deviation, potPosition, (average - deviation), (average + deviation));
+    Serial.println(output);
+    return true;
+  } else {
+    Serial.print(".");
+    return false;
+  }
+}
+
+void storeLatestAnalogValue(int analogPotmeter) {
+  //store latest pot position 
+  //TODO: should be done based on the last X measurements which lead to a movement of the servos, only servo movements should be averaged out
+  int summedPositions =  0;
+
+  //loop through every previous value, sum them and shift them 1 position to the beginning eventually making room at the end for the latest value
+  for (int i=0;i<inputHistoryLength;i++) {
+    summedPositions += previousAnalogValues[i];
+    previousAnalogValues[i] = previousAnalogValues[i+1];
+  }
+  
+  //store latest at the end
+  previousAnalogValues[inputHistoryLength+1] = analogPotmeter; 
+}
+
+
 void updateServoPositions(int relativePosition) {
   servoFront.write(relativePosition);
   servoRear.write(relativePosition);
@@ -110,6 +157,10 @@ int limitToMaxPositionsServo(int input) {
 void loop() {
   // read input from IR/serial
   int analogPotmeterInput = readSerialInput();   
+
+//  if ( isNewPotPositionEnough(analogPotmeterInput) ) {
+//storeLatestAnalogValue(analogPotmeterInput);
+
   
   if (analogPotmeterInput != -1) {
     analogPotmeterInput = limitToMaxPositionsServo(analogPotmeterInput);
