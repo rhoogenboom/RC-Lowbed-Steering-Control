@@ -1,39 +1,31 @@
 /*
    v1 - plate control with receiver overrule
+   v2 - include timeout and working receiverless
 */
 #include <SoftwareSerial.h>
-//#include <IRremote.h>
 
 //hook up serial comms object to pins
 SoftwareSerial serialOut(10, 11); // RX, TX
 
 #define RC_CH1_INPUT  2
-#define POT_PIN A2  //potmeter pin
+#define POT_PIN A2  //potentiometer pin
 
 const int CHANNEL_CENTER = 511;
 const int CHANNEL_DEADCENTER = 10;
 const int MIN_CHANNEL = 875;
 const int MAX_CHANNEL = 2125;
 
-//IRrecv irrecv(IR_RECV_PIN);
-//decode_results results;
-
 int deadCentreWidth = 2;
 int potDeviation = 25;
-
-int averagePotmeter;  //average value measured
-//keep track of previous analog input values in configurable length array, more values more precies but slower
-const int analogInputHistoryLength = 10;
-int previousAnalogValues[analogInputHistoryLength];
 
 int oldPosition;
 
 const int minValueMeasuredForPot = 0;
 const int maxValueMeasuredForPot = 1023;
-int potMiddlePosition = 504; //492; //overrule door plaatsing van magneet maxValueMeasuredForPot / 2; //waarde als potmeter in het midden staat
+int potMiddlePosition = 504; //overruled the middle position of maxValueMeasuredForPot divided by two 2 due to the magnetic center
 
-const int potMaxPositionLeft = 350; //minimale stand van potmeter links
-const int potMaxPositionRight = potMiddlePosition + (potMiddlePosition - potMaxPositionLeft); //maximale stand van potmeter rechts
+const int potMaxPositionLeft = 350; //minimale range potmeter movement left
+const int potMaxPositionRight = potMiddlePosition + (potMiddlePosition - potMaxPositionLeft); //maximal range potmeter movement right
 
 const int servoMinPulse = 1200;
 const int servoMaxPulse = 1800;
@@ -43,8 +35,6 @@ int maxPositionRightFrontServo = servoMaxPulse; //maximale uitslag naar rechts v
 
 int maxPositionLeftRearServo = servoMinPulse; //maximale uitslag naar links achterste servo
 int maxPositionRightRearServo = servoMaxPulse; //maximale uitslag naar rechts achterste servo
-
-String characterValues = ""; //concatenated numbers read over IR
 
 volatile int pulseChannel1;
 
@@ -87,11 +77,6 @@ void setup() {
   Serial.begin(9600);
   oldPosition = -1;
 
-  //setup a number of default middle positions
-  for (int i=0;i<analogInputHistoryLength;i++) {
-    previousAnalogValues[i] =  potMiddlePosition;
-  }
-
   serialOut.begin(57600);
 }
 
@@ -104,8 +89,6 @@ void debugSettings(int potmeter, int receiver) {
     //Serial.write(27); Serial.print("[2J"); // clear screen command
     //Serial.write(27); Serial.print("[H"); // home cursor
   
-    //Serial.println("============================");
-
     Serial.print("Chnl: "); // Print the value of 
     Serial.print(receiver);        // each c`hannel
     Serial.print("\t");
@@ -139,32 +122,18 @@ int limitToMaxPositionsFromReceiver(int input) {
   return map(input, MIN_CHANNEL, MAX_CHANNEL, minValueMeasuredForPot, maxValueMeasuredForPot);
 }
 
-int getSummedTotal() {
-  int total = 0;
-
-    for (int i=0;i<analogInputHistoryLength;i++) {
-      total += previousAnalogValues[i];
-      previousAnalogValues[i] = previousAnalogValues[i+1];
-    }
-
-  return total;
-}
-
 int mixPlateAndReceiverInput(int receiver, int potmeter) {
   //if receiver is centered we can just get out of here with just the potmeter
   if ( receiver == 0 || receiver < (CHANNEL_CENTER - CHANNEL_DEADCENTER) || receiver > (CHANNEL_CENTER + CHANNEL_DEADCENTER)) {
     //receiver is not centered, so do something with it
     if (receiver <= CHANNEL_CENTER) {
       // we need to subtract it from potmeter
-      //Serial.print("L");
       return (potmeter - abs((CHANNEL_CENTER-receiver)));
     } else {
-      //Serial.print("R");
       //we need to add it to potmeter
       return (potmeter + (receiver-CHANNEL_CENTER));
     }
   } else {
-    //Serial.print("*");
     return potmeter;
   }
 }
