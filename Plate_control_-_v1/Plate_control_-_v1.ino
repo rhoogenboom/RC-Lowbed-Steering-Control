@@ -118,8 +118,15 @@ int limitToMaxPositionsOnPlate(int input) {
 }
 
 int limitToMaxPositionsFromReceiver(int input) {
-  //below limits the receiver input range to the pot range so we can we can subtract or add them together
-  return map(input, MIN_CHANNEL, MAX_CHANNEL, minValueMeasuredForPot, maxValueMeasuredForPot);
+
+  //check if input is within allowed range, if not, the receive might be disconnected so we just return the middle
+  if (input == 0 || input < MIN_CHANNEL || input > MAX_CHANNEL) {
+    return CHANNEL_CENTER;
+  } else {
+    //TODO fix so we can use full stick range but still link to plate range for movement
+    //below limits the receiver input range to the pot range so we can we can subtract or add them together
+    return map(input, MIN_CHANNEL, MAX_CHANNEL, minValueMeasuredForPot, maxValueMeasuredForPot);
+  }
 }
 
 int mixPlateAndReceiverInput(int receiver, int potmeter) {
@@ -163,8 +170,6 @@ void loop() {
   // limit the pot values to what we expect them to be max left and right
   analogPotmeterInput = limitToMaxPositionsOnPlate(analogPotmeterInput);  
 
-  //storeLatestAnalogValue(analogPotmeterInput);
-  
   // translate plate position to relative position between max left and right
   int positionPotmeter = map(analogPotmeterInput, potMaxPositionLeft, potMaxPositionRight, minValueMeasuredForPot, maxValueMeasuredForPot); 
   
