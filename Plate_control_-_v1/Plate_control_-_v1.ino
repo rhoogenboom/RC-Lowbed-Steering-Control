@@ -124,8 +124,9 @@ int limitToMaxPositionsFromReceiver(int input) {
     return CHANNEL_CENTER;
   } else {
     //TODO fix so we can use full stick range but still link to plate range for movement
+    
     //below limits the receiver input range to the pot range so we can we can subtract or add them together
-    return map(input, MIN_CHANNEL, MAX_CHANNEL, minValueMeasuredForPot, maxValueMeasuredForPot);
+    return map(input, MIN_CHANNEL, MAX_CHANNEL, potMaxPositionLeft, potMaxPositionRight);
   }
 }
 
