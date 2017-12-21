@@ -1,5 +1,5 @@
 // PinChangeInt is for the multiprop channel data from the receiver
-#include <PinChangeInt.h>
+#include <PinChangeInterrupt.h>
 
 #define MULTI_IN_PIN A0
 
@@ -38,7 +38,8 @@ void setup() {
 
   // set up interrupt for receiver input
 
-  PCintPort::attachInterrupt(MULTI_IN_PIN, calcAux, CHANGE);
+  //PCintPort::
+  attachInterrupt(MULTI_IN_PIN, calcAux, CHANGE);
 }
 
 

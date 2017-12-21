@@ -1,5 +1,5 @@
 #include <Wire.h>
-#include <PinChangeInt.h>
+#include <PinChangeInterrupt.h>
 // next line is optional
 #include <Adafruit_PWMServoDriver.h>
 
@@ -20,8 +20,7 @@ void setup() {
   Serial.begin(9600); // other values include 9600, 14400, 57600 etc.
 
   // set up interrupt for receiver input
-  PCintPort::attachInterrupt(SERVO_IN_PIN, calcServo, CHANGE);
-  
+  attachInterrupt(SERVO_IN_PIN, calcServo, CHANGE);
   
   //from here to "end optional" comment is optional
   address = 0x40;  // i2c address for servo driver
