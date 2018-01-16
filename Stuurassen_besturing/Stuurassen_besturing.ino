@@ -1,4 +1,6 @@
 /*
+  Library: TMRh20/RF24, https://github.com/tmrh20/RF24/
+  
   v1 - eerste versie met 2 servo en variabele instelling
   v2 - added serial communication
 */

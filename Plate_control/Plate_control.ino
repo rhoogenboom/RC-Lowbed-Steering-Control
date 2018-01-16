@@ -1,7 +1,9 @@
 /*
-   v1 - plate control with receiver overrule
-   v2 - include timeout and working receiverless
-   v3 - adding wireless receiver
+  Library: TMRh20/RF24, https://github.com/tmrh20/RF24/
+
+  v1 - plate control with receiver overrule
+  v2 - include timeout and working receiverless
+  v3 - adding wireless receiver
 */
 #include <SPI.h>
 #include <nRF24L01.h>
@@ -13,9 +15,11 @@ RF24 radio(7, 8); // CE, CSN
 #define RC_CH1_INPUT  2 //receiver pin
 #define POT_PIN A2  //potentiometer pin
 
+
 const byte address[6] = "00001";
-const char STX = char(2);
-const char ETX = char(3);
+const char *structure1 = "c1=%d;c2=%d;c3=%d;mode=%d";
+const char *structure2 = "m1=%d;m2=%d;m3=%d;m4=%d";
+const char *structure3 = "m5=%d;m6=%d;m7=%d;m8=%d";
 
 const int CHANNEL_CENTER = 511;
 const int CHANNEL_DEADCENTER = 10;
@@ -157,14 +161,31 @@ int mixPlateAndReceiverInput(int receiver, int potmeter) {
 }
 
 void writeValueToTrailer(int value) {
-  //write STX
-  radio.write(&STX, sizeof(STX));
-
   //write value
-  radio.write(&value, sizeof(value));
+  char string[32];
+  sprintf(string, structure1, 
+    value, //channel1=%d;
+    1500,   //channel2=%d;
+    1500,   //channel3=%d;
+    0   //drivemode=%d;
+  );
+  radio.write(&string, sizeof(string));
   
-  //write ETX
-  radio.write(&ETX, sizeof(ETX));
+  sprintf(string, structure2, 
+    0,   //multi1=%d;
+    0,   //multi2=%d;
+    0,   //multi3=%d;
+    0    //multi4=%d;
+    );
+  radio.write(&string, sizeof(string));
+    
+  sprintf(string, structure3, 
+    0,   //multi5=%d;
+    0,   //multi6=%d;
+    0,   //multi7=%d;
+    0   //multi8=%d;
+    );
+  radio.write(&string, sizeof(string));
 }
 
 
