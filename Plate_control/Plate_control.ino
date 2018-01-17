@@ -15,8 +15,8 @@ RF24 radio(7, 8); // CE, CSN
 #define RC_CH1_INPUT  2 //receiver pin
 #define POT_PIN A2  //potentiometer pin
 
-
-const byte address[6] = "00001";
+//http://www.firewall.cx/cisco-technical-knowledgebase/cisco-wireless/828-cisco-wireless-wlan-keygen.html
+const byte address[6] = {0x66,0x68,0x7b,0x4a,0x63};   
 const char *structure1 = "c1=%d;c2=%d;c3=%d;mode=%d";
 const char *structure2 = "m1=%d;m2=%d;m3=%d;m4=%d";
 const char *structure3 = "m5=%d;m6=%d;m7=%d;m8=%d";

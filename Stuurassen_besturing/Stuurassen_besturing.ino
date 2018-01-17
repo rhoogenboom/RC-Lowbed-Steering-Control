@@ -11,7 +11,10 @@
 #include <RF24.h>
 
 RF24 radio(7, 8); // CE, CSN
-const byte address[6] = "00001";
+
+//http://www.firewall.cx/cisco-technical-knowledgebase/cisco-wireless/828-cisco-wireless-wlan-keygen.html
+const byte address[6] = {0x66,0x68,0x7b,0x4a,0x63};   
+
 //RH TODO remove pin 10 and 11 old IR comms
 
 int SERVO_VOOR_PIN = 6;
