@@ -9,11 +9,11 @@
 #include <nRF24L01.h>
 #include <RF24.h>
 
-RF24 radio(7, 8); // CE, CSN
+RF24 radio(3, 4); // CE, CSN
 //TODO remove 10,11 for serial comms
 
-#define RC_CH1_INPUT  2 //receiver pin
-#define POT_PIN A2  //potentiometer pin
+#define RC_CH1_INPUT  46 //2 //receiver pin
+#define POT_PIN A1  //potentiometer pin
 
 //http://www.firewall.cx/cisco-technical-knowledgebase/cisco-wireless/828-cisco-wireless-wlan-keygen.html
 const byte address[6] = {0x66,0x68,0x7b,0x4a,0x63};   
@@ -29,7 +29,7 @@ const int MAX_CHANNEL = 2125;
 int deadCentreWidth = 2;
 int potDeviation = 25;
 
-int oldPosition;
+int previousPlatePosition;
 
 const int minValueMeasuredForPot = 0;
 const int maxValueMeasuredForPot = 1023;
@@ -51,11 +51,11 @@ volatile int pulseChannel1;
 
 volatile unsigned long timer_start;
 
-volatile int last_interrupt_time; //calcSignal is the interrupt handler
+//volatile int last_interrupt_time; //calcSignal is the interrupt handler
 
 void calcSignal() {
   //record the interrupt time so that we can tell if the receiver has a signal from the transmitter
-  last_interrupt_time = micros();
+  //last_interrupt_time = micros();
   //if the pin has gone HIGH, record the microseconds since the Arduino started up
   if (digitalRead(RC_CH1_INPUT) == HIGH) {
     timer_start = micros();
@@ -86,7 +86,7 @@ void setup() {
 
   // debug and needed for IR
   Serial.begin(9600);
-  oldPosition = -1;
+  previousPlatePosition = -1;
 
   radio.begin();
   radio.openWritingPipe(address);
@@ -96,7 +96,7 @@ void setup() {
 
 void debugSettings(int potmeter, int receiver) {
 
-  if ( abs(potmeter-oldPosition) > 3) {
+  if ( abs(potmeter-previousPlatePosition) > 3) {
     //write the calculated value to the trailer
     writeValueToTrailer(map(potmeter, 0, maxValueMeasuredForPot, maxPositionLeftFrontServo, maxPositionRightFrontServo));
 
@@ -113,7 +113,7 @@ void debugSettings(int potmeter, int receiver) {
       
     Serial.print("Servo:  ");
     Serial.println(map(potmeter, 0, maxValueMeasuredForPot, maxPositionLeftFrontServo, maxPositionRightFrontServo));
-    oldPosition = potmeter;
+    previousPlatePosition = potmeter;
   }
 }
 
@@ -165,8 +165,8 @@ void writeValueToTrailer(int value) {
   char string[32];
   sprintf(string, structure1, 
     value, //channel1=%d;
-    1500,   //channel2=%d;
-    1500,   //channel3=%d;
+    0,   //channel2=%d;
+    0,   //channel3=%d;
     0   //drivemode=%d;
   );
   radio.write(&string, sizeof(string));

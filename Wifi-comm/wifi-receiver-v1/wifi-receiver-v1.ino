@@ -11,7 +11,12 @@
 #include <nRF24L01.h>
 #include <RF24.h>
 
+#include <OSLController.h>
+
+
 RF24 radio(7, 8); // CE, CSN
+
+//OSLController controller;
 
 //replace easy to guess default address "00001";
 //http://www.firewall.cx/cisco-technical-knowledgebase/cisco-wireless/828-cisco-wireless-wlan-keygen.html
@@ -23,7 +28,17 @@ void setup() {
   radio.openReadingPipe(0, address);
   radio.setPALevel(RF24_PA_MIN);
   radio.startListening();
+  
+//  char input[32] = {'c','1','=','1','2','0','3',';','c','2','=','1','5','0','0',';','c','3','=','2','3','0','4',';','m','o','d','e','=','5',';'};
+//  controller.processSettings(input);
+//  char input2[32] = {'m','1','=','1',';','m','2','=','1',';','m','3','=','0',';','m','4','=','0',';'};
+//  controller.processSettings(input2);
+//  char input3[32] = {'m','5','=','0',';','m','6','=','0',';','m','7','=','0',';','m','8','=','0',';'};
+//  controller.processSettings(input3);
+//
+//  Serial.println(controller.printDebugInfo());
 }
+int teller = 0;
 
 void loop() {
   if (radio.available()) {
@@ -31,4 +46,10 @@ void loop() {
     radio.read(&text, sizeof(text));
     Serial.println(text);
   }
+  teller++;
+  if ((teller % 1000) == 0) {
+    Serial.println(millis());
+    teller = 0;
+  }
+  delay(5); 
 }
