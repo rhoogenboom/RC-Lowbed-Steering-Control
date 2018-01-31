@@ -11,6 +11,10 @@
 #include <nRF24L01.h>
 #include <RF24.h>
 
+#include <OSLController.h>
+
+OSLController controller;
+
         //receiver items and model inputs
         const byte ThrottleChannel_Pin =    21;                      // The Arduino pin connected to the throttle channel input - D21/pin43
         const byte SteeringChannel_Pin =    20;                      // The Arduino pin connected to the steering channel input - D20/pin44
@@ -45,11 +49,27 @@ void setup() {
   radio.setPALevel(RF24_PA_MIN);
   radio.stopListening();
 
+  char input[32] = {'c','1','=','1','2','0','3',';','c','2','=','1','5','0','0',';','c','3','=','2','3','0','4',';','m','o','d','e','=','5',';'};
+  Serial.println(controller.processSettings(input));
+  char input2[32] = {'m','1','=','1',';','m','2','=','1',';','m','3','=','0',';','m','4','=','0',';'};
+  Serial.println(controller.processSettings(input2));
+  char input3[32] = {'m','5','=','0',';','m','6','=','0',';','m','7','=','0',';','m','8','=','0',';'};
+  Serial.println(controller.processSettings(input3));  
+
 }
 char text[32];
 
 void loop() {
-  sprintf(text, "milis=%d", millis());
+  controller.getControllerInfo().toCharArray(text, 32);
   radio.write(&text, sizeof(text));
-  Serial.println("Written text");
+  Serial.println(text);
+  delay(100);
+  controller.getLightsInfo1_4().toCharArray(text, 32);
+  radio.write(&text, sizeof(text));
+  Serial.println(text);
+  delay(100);
+  controller.getLightsInfo5_8().toCharArray(text, 32);
+  radio.write(&text, sizeof(text));
+  Serial.println(text);
+  delay(100);
 }
