@@ -32,16 +32,16 @@ class OSLController {
     
     typedef struct
     {
-      bool state;
-//      uint8_t function;
+      int8_t state;
+//      uint8_t function; //no support for how the led should blink yet
     } OSLLight;
 
     typedef struct
     {
       uint16_t controller1;
-//      uint16_t controller2;
-//      uint16_t controller3;
-      int8_t driveMode;
+//      uint16_t controller2;  // only 1 controller
+//      uint16_t controller3;  // only 1 controller
+//      int8_t driveMode;   //no drive mode limit structure size
       OSLLight lights[NumLights];
     } OSLLightPacket;
 
