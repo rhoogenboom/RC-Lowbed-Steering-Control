@@ -7,14 +7,14 @@ RF24 radio(3, 4); // CE, CSN
 const byte address[6] = {0x66,0x68,0x7b,0x4a,0x63}; 
 
 OSL_SimpleTimer timer; 
-#define transmissionInterval 250  //ms transmission interval
+#define transmissionInterval 500  //ms transmission interval
 unsigned int transmissionTimerID;
 bool startUp;
 
 typedef struct
 {
   uint8_t state;
-  uint8_t type;
+//  uint8_t function;
 } OSLLight;
 
 typedef struct
@@ -25,7 +25,7 @@ typedef struct
   OSLLight lights[12];
 } OSLLightPacket;
 
-OSLLightPacket packet;
+volatile OSLLightPacket packet;
 
 bool useStructure = true;
   
@@ -43,9 +43,8 @@ void setup() {
 //  packet.controller2 = 1050;
 //  packet.controller3 = 2100;
   packet.lights[0].state = 1;
-  packet.lights[0].type = 3;
-  packet.lights[0].state = 0;
-  packet.lights[0].type = 2;
+  packet.lights[2].state = 0;
+
 
 }
 

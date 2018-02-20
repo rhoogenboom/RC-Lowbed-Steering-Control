@@ -9,7 +9,7 @@ const byte address[6] = {0x66,0x68,0x7b,0x4a,0x63};
 typedef struct
 {
   uint8_t state;
-  uint8_t type;
+//  uint8_t type;
 } OSLLight;
 
 typedef struct
@@ -20,7 +20,7 @@ typedef struct
   OSLLight lights[12];
 } OSLLightPacket;
 
-OSLLightPacket packet;
+volatile OSLLightPacket packet;
 
 bool useStructure = true;
 
