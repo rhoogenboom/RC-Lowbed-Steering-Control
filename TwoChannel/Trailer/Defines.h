@@ -8,3 +8,8 @@
 #define MIN(x,y) ( x > y ? y : x )
 #define MAX(x,y) ( x > y ? x : y )
 
+// Debugging
+#define BAUDRATE 9600
+#define DEBUG_INPUT false         
+#define DEBUG_OUTPUT false         
+

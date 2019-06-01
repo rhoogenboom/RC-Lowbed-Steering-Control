@@ -8,3 +8,14 @@
 #define MIN(x,y) ( x > y ? y : x )
 #define MAX(x,y) ( x > y ? x : y )
 
+// Debugging
+#define BAUDRATE 9600
+#define DEBUG_INPUT false         
+#define DEBUG_OUTPUT false         
+
+// TIMER
+#define TRANSMISSION_INTERVAL 100  
+
+//receiver items and model inputs
+#define POTMETER_PIN A7 // 5th wheel Mega: A1/pin96 - Nano: A7/
+
