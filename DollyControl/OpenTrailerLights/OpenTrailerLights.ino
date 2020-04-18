@@ -131,7 +131,7 @@ void setup()
   eeprom_read(Temp, E_InitNum);
 
   // If EEPROM has never been initialized before, do so now
-  if (Temp == EEPROM_Init)
+  if (Temp != EEPROM_Init)
   {
     Serial.println("eeprom not initialized");
     Initialize_EEPROM();
@@ -145,7 +145,7 @@ void setup()
   updateServoPositions(1500);
 
   radio.begin();
-  radio.setPALevel(RF24_PA_MIN); //RF24_PA_MIN = 0,RF24_PA_LOW, RF24_PA_HIGH, RF24_PA_MAX, RF24_PA_ERROR
+  radio.setPALevel(RF24_PA_LOW); //RF24_PA_MIN = 0,RF24_PA_LOW, RF24_PA_HIGH, RF24_PA_MAX, RF24_PA_ERROR
   radio.setDataRate(RF24_250KBPS); //RF24_1MBPS = 0, RF24_2MBPS, RF24_250KBPS  
   radio.openReadingPipe(0, address);
   radio.startListening();
@@ -155,6 +155,7 @@ void loop()
 {
   if (Startup)
   {       
+
 //      if (DEBUG) { DumpConfiguration(); }  //todo - dump current configuration to serial
       timer.setInterval(BlinkInterval, BlinkLights);
       timer.setInterval(FastBlinkInterval, FastBlinkLights);
